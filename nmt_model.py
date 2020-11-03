@@ -482,7 +482,7 @@ class NMT(nn.Module):
                 
                 new_hyp_sent = hypotheses[prev_hyp_id] + [hyp_word]
 
-                print('hyp_word = {}'.format(new_hyp_sent))
+                print('new_hyp_sent = {}'.format(new_hyp_sent))
                 print('Type is {}'.format(type(new_hyp_sent)))
                 
                 if hyp_word == '</s>':
