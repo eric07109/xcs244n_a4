@@ -240,7 +240,7 @@ class NMT(nn.Module):
         ###             - Append o_t to combined_outputs
         ###             - Update o_prev to the new o_t.
         for Y_t in torch.split(Y, 1, dim = 0):
-            Y_t = torch.squeeze(Y_t)
+            Y_t = torch.squeeze(Y_t, dim=0)
             # print('o_prev shape = {}'.format(o_prev.shape))
             Ybar_t = torch.cat((Y_t, o_prev), dim=1)
             dec_state, o_t, e_t = self.step(Ybar_t, dec_init_state, enc_hiddens, enc_hiddens_proj, enc_masks)
@@ -313,7 +313,7 @@ class NMT(nn.Module):
         ###     3. Compute the attention scores e_t, a Tensor shape (b, src_len). 
         ###        Note: b = batch_size, src_len = maximum source length, h = hidden size.
         ###
-        e_t = torch.squeeze(torch.bmm(enc_hiddens_proj, torch.unsqueeze(dec_hidden, 2)), 2)
+        e_t = torch.squeeze(torch.bmm(enc_hiddens_proj, torch.unsqueeze(dec_hidden, 2)), dim = 2)
         # print('e_t shape = {}'.format(e_t.shape))
         # print('an example of e_t tensor = {}'.format(e_t[0]))
 
