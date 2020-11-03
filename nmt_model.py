@@ -169,7 +169,7 @@ class NMT(nn.Module):
         X = self.model_embeddings.source(source_padded)
         X = nn.utils.rnn.pack_padded_sequence(X, source_lengths)
         
-        enc_hiddens, (h_0, c_0) = self.encoder(X, (torch.zeros(1 * 2, batch_size, self.hidden_size), torch.zeros(1 * 2, batch_size, self.hidden_size)))
+        enc_hiddens, (h_0, c_0) = self.encoder(X)
         enc_hiddens = nn.utils.rnn.pad_packed_sequence(enc_hiddens, batch_first=True)[0]
         
         # concatenate h_0 to shape [b, 2 *h] and apply it to h_projection liner layer
