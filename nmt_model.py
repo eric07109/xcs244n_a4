@@ -68,7 +68,7 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
 
         self.encoder = nn.LSTM(embed_size, hidden_size, bias=True, bidirectional=True)
-        self.decoder = nn.LSTMCell(embed_size * 2, hidden_size, bias=True)
+        self.decoder = nn.LSTMCell(embed_size + hidden_size, hidden_size, bias=True)
         self.h_projection = nn.Linear(hidden_size * 2, hidden_size, bias=False)
         self.c_projection = nn.Linear(hidden_size * 2, hidden_size, bias=False)
         self.att_projection = nn.Linear(hidden_size * 2, hidden_size, bias=False)
@@ -223,14 +223,14 @@ class NMT(nn.Module):
         ###         This is applying W_{attProj} to h^enc, as described in the PDF.
         # print('Shape of enc_hiddens = {}'.format(enc_hiddens.shape))
         enc_hiddens_proj = self.att_projection(enc_hiddens)
-        # print('Shape of enc_hiddens_proj = {}'.format(enc_hiddens_proj.shape))
+        print('Shape of enc_hiddens_proj = {}'.format(enc_hiddens_proj.shape))
 
 
         ###     2. Construct tensor `Y` of target sentences with shape (tgt_len, b, e) using the target model embeddings.
         ###         where tgt_len = maximum target sentence length, b = batch size, e = embedding size.
 
         Y = self.model_embeddings.target(target_padded)
-        # print('Y shape = {}'.format(Y.shape))
+        print('Y shape = {}'.format(Y.shape))
         ###     3. Use the torch.split function to iterate over the time dimension of Y.
         ###         Within the loop, this will give you Y_t of shape (1, b, e) where b = batch size, e = embedding size.
         ###             - Squeeze Y_t into a tensor of dimension (b, e). 
@@ -241,9 +241,12 @@ class NMT(nn.Module):
         ###             - Update o_prev to the new o_t.
         for Y_t in torch.split(Y, 1, dim = 0):
             Y_t = torch.squeeze(Y_t, dim=0)
-            # print('o_prev shape = {}'.format(o_prev.shape))
+            print('Y_t shape = {}'.format(Y_t.shape))
+            print('o_prev shape = {}'.format(o_prev.shape))
             Ybar_t = torch.cat((Y_t, o_prev), dim=1)
-            dec_state, o_t, e_t = self.step(Ybar_t, dec_init_state, enc_hiddens, enc_hiddens_proj, enc_masks)
+            print('Ybar_t shape = {}'.format(Ybar_t.shape))
+
+            dec_state, o_t, e_t = self.step(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks)
             combined_outputs.append(o_t)
             o_prev = o_t
             # print('Ybar_t shape = {}'.format(Ybar_t.shape))
@@ -252,8 +255,9 @@ class NMT(nn.Module):
         ###         tensors shape (b, h), to a single tensor shape (tgt_len, b, h)
         ###         where tgt_len = maximum target sentence length, b = batch size, h = hidden size.
         ###
+        print(combined_outputs)
         combined_outputs = torch.stack(combined_outputs, dim=0)
-
+        print(combined_outputs.shape)
         ### Note:
         ###    - When using the squeeze() function make sure to specify the dimension you want to squeeze
         ###      over. Otherwise, you will remove the batch dimension accidentally, if batch_size = 1.
@@ -306,14 +310,20 @@ class NMT(nn.Module):
         ### YOUR CODE HERE (~3 Lines)
         ### TODO:
         ###     1. Apply the decoder to `Ybar_t` and `dec_state`to obtain the new dec_state.
-        # print('Ybar_t shape = {}'.format(Ybar_t.shape))
+        print('Ybar_t shape = {}'.format(Ybar_t.shape))
         dec_state = self.decoder(Ybar_t, dec_state)
         (dec_hidden, dec_cell) = (dec_state[0], dec_state[1])
         ###     2. Split dec_state into its two parts (dec_hidden, dec_cell)
         ###     3. Compute the attention scores e_t, a Tensor shape (b, src_len). 
         ###        Note: b = batch_size, src_len = maximum source length, h = hidden size.
         ###
-        e_t = torch.squeeze(torch.bmm(enc_hiddens_proj, torch.unsqueeze(dec_hidden, 2)), dim = 2)
+        # print('dec_hidden shape = {}'.format(dec_hidden.shape))
+        # print('dec_hidden shape = {}'.format(torch.transpose(torch.unsqueeze(dec_hidden, 2), 1, 2).shape))
+        dec_hidden_T = torch.transpose(torch.unsqueeze(dec_hidden, 2), 1, 2)
+        # print('enc_hiddens_proj shape = {}'.format(enc_hiddens_proj.shape))
+        e_t = torch.squeeze(torch.bmm(dec_hidden_T, torch.transpose(enc_hiddens_proj, 1, 2)), dim = 1)
+
+        # e_t = torch.squeeze(torch.bmm(enc_hiddens_proj, torch.unsqueeze(dec_hidden, 2)), dim = 2)
         # print('e_t shape = {}'.format(e_t.shape))
         # print('an example of e_t tensor = {}'.format(e_t[0]))
 
