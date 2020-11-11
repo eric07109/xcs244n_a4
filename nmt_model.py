@@ -478,23 +478,13 @@ class NMT(nn.Module):
 
             for prev_hyp_id, hyp_word_id, cand_new_hyp_score in zip(prev_hyp_ids, hyp_word_ids, top_cand_hyp_scores):
                 prev_hyp_id = prev_hyp_id.item()
-
-                print('prev_hyp_id = {}'.format(prev_hyp_id))
-                print('Type is {}'.format(type(prev_hyp_id)))
                 
                 hyp_word_id = hyp_word_id.item()
                 cand_new_hyp_score = cand_new_hyp_score.item()
 
                 hyp_word = self.vocab.tgt.id2word[hyp_word_id]
-
-                print('hyp_word = {}'.format(hyp_word))
-                print('Type is {}'.format(type(hyp_word)))
-                
                 new_hyp_sent = hypotheses[prev_hyp_id] + [hyp_word]
 
-                print('new_hyp_sent = {}'.format(new_hyp_sent))
-                print('Type is {}'.format(type(new_hyp_sent)))
-                
                 if hyp_word == '</s>':
                     completed_hypotheses.append(Hypothesis(value=new_hyp_sent[1:-1],
                                                            score=cand_new_hyp_score))
